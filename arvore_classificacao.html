@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Árvore de Classificação de Produtos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .tree {
+            margin: 20px 0;
+        }
+        
+        .tree ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .tree li {
+            margin: 5px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .tree li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 15px;
+            width: 20px;
+            height: 1px;
+            background: #d0d0d0;
+        }
+        
+        .tree > ul > li::before {
+            display: none;
+        }
+        
+        .node {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 3px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .node:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .nivel-0 {
+            background: #E57373;
+            color: white;
+            border-color: #E57373;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .nivel-1 {
+            background: #FFD95C;
+            color: #333;
+            border-color: #FFD95C;
+            font-size: 15px;
+        }
+        
+        .nivel-2-sim {
+            background: #C7E8C5;
+            color: #333;
+            border-color: #C7E8C5;
+            font-size: 14px;
+        }
+        
+        .nivel-2-nao {
+            background: #C7E8C5;
+            color: #333;
+            border-color: #C7E8C5;
+            font-size: 14px;
+        }
+        
+        .nivel-3 {
+            background: #B3D9FF;
+            color: #333;
+            border-color: #B3D9FF;
+            font-size: 14px;
+        }
+        
+        .nivel-4 {
+            background: #FFCC99;
+            color: #333;
+            border-color: #FFCC99;
+            font-size: 13px;
+        }
+        
+        .nivel-5 {
+            background: #D7BDE2;
+            color: #333;
+            border-color: #D7BDE2;
+            font-size: 13px;
+        }
+        
+        .categoria {
+            background: white;
+            color: #555;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            margin: 2px;
+            display: inline-block;
+            border-radius: 4px;
+        }
+        
+        .collapsed > ul {
+            display: none;
+        }
+        
+        .toggle {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 14px;
+            text-align: center;
+            margin-right: 6px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .collapsed .toggle::before {
+            content: '+';
+        }
+        
+        .expanded .toggle::before {
+            content: '−';
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .btn {
+            background: white;
+            color: #555;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            background: #f0f0f0;
+            border-color: #bbb;
+        }
+        
+        .info-box {
+            background: #f9f9f9;
+            border-left: 3px solid #999;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .info-box h3 {
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .info-box p {
+            color: #666;
+            line-height: 1.5;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Árvore de Classificação de Produtos</h1>
+        
+        <div class="info-box">
+            <p><strong>Clique nos itens</strong> para expandir/colapsar. Use os botões abaixo para controlar a visualização.</p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="expandAll()">Expandir Tudo</button>
+            <button class="btn" onclick="collapseAll()">Colapsar Tudo</button>
+            <button class="btn" onclick="window.print()">Imprimir</button>
+        </div>
+        
+        <div class="tree">
+            <ul>
+                <li class="expanded">
+                    <span class="node nivel-0"><span class="toggle"></span>Produto</span>
+                    <ul>
+                        <li class="expanded">
+                            <span class="node nivel-1"><span class="toggle"></span>É Medicamento?</span>
+                            <ul>
+                                <!-- CAMINHO A: MEDICAMENTO -->
+                                <li class="expanded">
+                                    <span class="node nivel-2-sim"><span class="toggle"></span>SIM - CAMINHO A: MEDICAMENTO</span>
+                                    <ul>
+                                        <li><span class="node nivel-3">GRUPO_MACRO = MEDICAMENTO</span></li>
+                                        
+                                        <li class="expanded">
+                                            <span class="node nivel-4"><span class="toggle"></span>MED_CLASSE_TERAPEUTICA</span>
+                                            <ul>
+                                                <li><span class="categoria">Dor e Febre</span></li>
+                                                <li><span class="categoria">Gripe e Resfriado</span></li>
+                                                <li><span class="categoria">Digestivo</span></li>
+                                                <li><span class="categoria">Diabetes</span></li>
+                                                <li><span class="categoria">Cardiovascular</span></li>
+                                                <li><span class="categoria">Fitoterápico</span></li>
+                                                <li><span class="categoria">Homeopático</span></li>
+                                                <li><span class="categoria">Outros</span></li>
+                                            </ul>
+                                        </li>
+                                        
+                                        <li class="collapsed">
+                                            <span class="node nivel-4"><span class="toggle"></span>MED_SUBCLASSE_TERAPEUTICA</span>
+                                            <ul>
+                                                <li><span class="categoria">Analgésicos</span></li>
+                                                <li><span class="categoria">Antitérmicos</span></li>
+                                                <li><span class="categoria">Anti-inflamatórios</span></li>
+                                                <li><span class="categoria">Antiácidos</span></li>
+                                                <li><span class="categoria">Protetores Gástricos</span></li>
+                                                <li><span class="categoria">Antieméticos</span></li>
+                                                <li><span class="categoria">Antidiarreicos</span></li>
+                                                <li><span class="categoria">Laxativos</span></li>
+                                                <li><span class="categoria">Antigripais</span></li>
+                                                <li><span class="categoria">Descongestionantes</span></li>
+                                                <li><span class="categoria">Antialérgicos</span></li>
+                                                <li><span class="categoria">Hipoglicemiantes Orais</span></li>
+                                                <li><span class="categoria">Insulinas</span></li>
+                                                <li><span class="categoria">Anti-hipertensivos</span></li>
+                                                <li><span class="categoria">Diuréticos</span></li>
+                                                <li><span class="categoria">Anticoagulantes</span></li>
+                                                <li><span class="categoria">Antibióticos</span></li>
+                                                <li><span class="categoria">Outros</span></li>
+                                            </ul>
+                                        </li>
+                                        
+                                        <li class="collapsed">
+                                            <span class="node nivel-4"><span class="toggle"></span>MED_TIPO_PRODUTO</span>
+                                            <ul>
+                                                <li><span class="categoria">Referência</span></li>
+                                                <li><span class="categoria">Genérico</span></li>
+                                                <li><span class="categoria">Similar</span></li>
+                                                <li><span class="categoria">Biológico</span></li>
+                                                <li><span class="categoria">Biossimilar</span></li>
+                                                <li><span class="categoria">Fitoterápico</span></li>
+                                                <li><span class="categoria">Homeopático</span></li>
+                                                <li><span class="categoria">Radiofármaco</span></li>
+                                            </ul>
+                                        </li>
+                                        
+                                        <li class="collapsed">
+                                            <span class="node nivel-4"><span class="toggle"></span>MED_TARJA</span>
+                                            <ul>
+                                                <li><span class="categoria">Sem Tarja</span></li>
+                                                <li><span class="categoria">Amarela</span></li>
+                                                <li><span class="categoria">Vermelha</span></li>
+                                                <li><span class="categoria">Vermelha c/ Retenção</span></li>
+                                                <li><span class="categoria">Preta</span></li>
+                                            </ul>
+                                        </li>
+                                        
+                                        <li class="collapsed">
+                                            <span class="node nivel-4"><span class="toggle"></span>MED_REGIME_PRECO</span>
+                                            <ul>
+                                                <li><span class="categoria">PMC</span></li>
+                                                <li><span class="categoria">PF</span></li>
+                                                <li><span class="categoria">Controlado CMED</span></li>
+                                                <li><span class="categoria">Liberado</span></li>
+                                                <li><span class="categoria">Não Regulado</span></li>
+                                            </ul>
+                                        </li>
+                                        
+                                        <li class="collapsed">
+                                            <span class="node nivel-4"><span class="toggle"></span>MED_PRESCRICAO</span>
+                                            <ul>
+                                                <li><span class="categoria">Isento</span></li>
+                                                <li><span class="categoria">Obrigatória</span></li>
+                                            </ul>
+                                        </li>
+                                        
+                                        <li class="collapsed">
+                                            <span class="node nivel-4"><span class="toggle"></span>MED_USO</span>
+                                            <ul>
+                                                <li><span class="categoria">Humano</span></li>
+                                                <li><span class="categoria">Veterinário</span></li>
+                                            </ul>
+                                        </li>
+                                        
+                                        <li class="collapsed">
+                                            <span class="node nivel-4"><span class="toggle"></span>MED_VIA_ADMINISTRACAO</span>
+                                            <ul>
+                                                <li><span class="categoria">Oral</span></li>
+                                                <li><span class="categoria">Tópico</span></li>
+                                                <li><span class="categoria">Nasal</span></li>
+                                                <li><span class="categoria">Oftálmico</span></li>
+                                                <li><span class="categoria">Intravenoso</span></li>
+                                                <li><span class="categoria">Intramuscular</span></li>
+                                                <li><span class="categoria">Subcutâneo</span></li>
+                                                <li><span class="categoria">Injetável (Outros)</span></li>
+                                                <li><span class="categoria">Outros</span></li>
+                                            </ul>
+                                        </li>
+                                        
+                                        <li class="collapsed">
+                                            <span class="node nivel-4"><span class="toggle"></span>MED_FORMA_FARMACEUTICA</span>
+                                            <ul>
+                                                <li><span class="categoria">Comprimido</span></li>
+                                                <li><span class="categoria">Cápsula</span></li>
+                                                <li><span class="categoria">Solução/Suspensão</span></li>
+                                                <li><span class="categoria">Creme</span></li>
+                                                <li><span class="categoria">Pomada</span></li>
+                                                <li><span class="categoria">Gel</span></li>
+                                                <li><span class="categoria">Ampola/Frasco</span></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                                
+                                <!-- CAMINHO NÃO MEDICAMENTO -->
+                                <li class="expanded">
+                                    <span class="node nivel-2-nao"><span class="toggle"></span>NÃO</span>
+                                    <ul>
+                                        <li class="expanded">
+                                            <span class="node nivel-1"><span class="toggle"></span>É Produto para Saúde?</span>
+                                            <ul>
+                                                <!-- CAMINHO C: PRODUTOS PARA SAÚDE -->
+                                                <li class="expanded">
+                                                    <span class="node nivel-2-sim"><span class="toggle"></span>SIM - CAMINHO C: PRODUTOS PARA SAÚDE</span>
+                                                    <ul>
+                                                        <li><span class="node nivel-3">GRUPO_MACRO = PRODUTOS PARA SAÚDE</span></li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>EPIs e Proteção</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Máscaras</span></li>
+                                                                <li><span class="categoria">Luvas</span></li>
+                                                                <li><span class="categoria">Toucas e Propés</span></li>
+                                                                <li><span class="categoria">Aventais</span></li>
+                                                                <li><span class="categoria">Outros EPIs</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Primeiros Socorros</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Curativos e Bandagens</span></li>
+                                                                <li><span class="categoria">Algodão e Gaze</span></li>
+                                                                <li><span class="categoria">Esparadrapo e Fitas</span></li>
+                                                                <li><span class="categoria">Antissépticos Tópicos</span></li>
+                                                                <li><span class="categoria">Outros Socorros</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Materiais Descartáveis</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Seringas e Agulhas</span></li>
+                                                                <li><span class="categoria">Cateteres e Sondas</span></li>
+                                                                <li><span class="categoria">Coletores</span></li>
+                                                                <li><span class="categoria">Materiais Cirúrgicos</span></li>
+                                                                <li><span class="categoria">Outros Descartáveis</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Medição e Monitoramento</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Termômetros</span></li>
+                                                                <li><span class="categoria">Aparelhos de Pressão</span></li>
+                                                                <li><span class="categoria">Glicosímetros e Tiras</span></li>
+                                                                <li><span class="categoria">Oxímetros</span></li>
+                                                                <li><span class="categoria">Balanças</span></li>
+                                                                <li><span class="categoria">Testes Rápidos</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Saúde Respiratória</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Inaladores e Nebulizadores</span></li>
+                                                                <li><span class="categoria">Umidificadores</span></li>
+                                                                <li><span class="categoria">Espaçadores</span></li>
+                                                                <li><span class="categoria">Outros Respiratória</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Ortopedia</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Imobilizadores e Tipoias</span></li>
+                                                                <li><span class="categoria">Meias de Compressão</span></li>
+                                                                <li><span class="categoria">Palmilhas</span></li>
+                                                                <li><span class="categoria">Bengalas e Muletas</span></li>
+                                                                <li><span class="categoria">Cadeiras de Rodas</span></li>
+                                                                <li><span class="categoria">Outros Ortopedia</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Diagnóstico e Testes</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Testes de Gravidez</span></li>
+                                                                <li><span class="categoria">Testes de Ovulação</span></li>
+                                                                <li><span class="categoria">Outros Diagnósticos</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Higiene Assistiva e Absorventes</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Fraldas Geriátricas</span></li>
+                                                                <li><span class="categoria">Absorventes para Incontinência</span></li>
+                                                                <li><span class="categoria">Roupas Íntimas Descartáveis</span></li>
+                                                                <li><span class="categoria">Outros Incontinência</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Outros Produtos para Saúde</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Outros</span></li>
+                                                            </ul>
+                                                        </li>
+                                                    </ul>
+                                                </li>
+                                                
+                                                <!-- CAMINHO B: VAREJO / CONSUMO -->
+                                                <li class="expanded">
+                                                    <span class="node nivel-2-nao"><span class="toggle"></span>NÃO - CAMINHO B: VAREJO / CONSUMO</span>
+                                                    <ul>
+                                                        <li><span class="node nivel-3">GRUPO_MACRO = VAREJO / CONSUMO</span></li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Perfumaria e Higiene</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Capilar</span></li>
+                                                                <li><span class="categoria">Corporal</span></li>
+                                                                <li><span class="categoria">Facial</span></li>
+                                                                <li><span class="categoria">Higiene Oral</span></li>
+                                                                <li><span class="categoria">Desodorantes</span></li>
+                                                                <li><span class="categoria">Sabonetes</span></li>
+                                                                <li><span class="categoria">Barba e Depilação</span></li>
+                                                                <li><span class="categoria">Higiene Íntima</span></li>
+                                                                <li><span class="categoria">Perfumaria - Outros</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Dermocosméticos</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Anti-idade</span></li>
+                                                                <li><span class="categoria">Proteção Solar</span></li>
+                                                                <li><span class="categoria">Limpeza Facial</span></li>
+                                                                <li><span class="categoria">Tratamentos Específicos</span></li>
+                                                                <li><span class="categoria">Corpo e Banho Dermo</span></li>
+                                                                <li><span class="categoria">Capilar Dermo</span></li>
+                                                                <li><span class="categoria">Dermo - Outros</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Mundo Infantil</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Alimentação Infantil</span></li>
+                                                                <li><span class="categoria">Acessórios Infantis</span></li>
+                                                                <li><span class="categoria">Gestante e Maternidade</span></li>
+                                                                <li><span class="categoria">Fraldas Infantis</span></li>
+                                                                <li><span class="categoria">Banho e Higiene Bebê</span></li>
+                                                                <li><span class="categoria">Infantil - Outros</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Nutrição e Suplementos</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Vitaminas e Minerais</span></li>
+                                                                <li><span class="categoria">Suplementos Esportivos</span></li>
+                                                                <li><span class="categoria">Geriátrico</span></li>
+                                                                <li><span class="categoria">Controle de Peso</span></li>
+                                                                <li><span class="categoria">Alimentos Funcionais</span></li>
+                                                                <li><span class="categoria">Nutrição - Outros</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-4"><span class="toggle"></span>Conveniência</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Bebidas</span></li>
+                                                                <li><span class="categoria">Snacks e Doces</span></li>
+                                                                <li><span class="categoria">Utilidades Domésticas</span></li>
+                                                                <li><span class="categoria">Conveniência - Outros</span></li>
+                                                            </ul>
+                                                        </li>
+                                                        
+                                                        <li class="collapsed">
+                                                            <span class="node nivel-5"><span class="toggle"></span>Exceção: NÃO IDENTIFICADO</span>
+                                                            <ul>
+                                                                <li><span class="categoria">Apenas se NÃO for Medicamento, Produto para Saúde ou Varejo</span></li>
+                                                            </ul>
+                                                        </li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Toggle de nós individuais
+        document.querySelectorAll('.node').forEach(node => {
+            node.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const li = this.parentElement;
+                if (li.classList.contains('expanded')) {
+                    li.classList.remove('expanded');
+                    li.classList.add('collapsed');
+                } else {
+                    li.classList.remove('collapsed');
+                    li.classList.add('expanded');
+                }
+            });
+        });
+        
+        // Expandir todos
+        function expandAll() {
+            document.querySelectorAll('.tree li').forEach(li => {
+                li.classList.remove('collapsed');
+                li.classList.add('expanded');
+            });
+        }
+        
+        // Colapsar todos
+        function collapseAll() {
+            document.querySelectorAll('.tree li').forEach(li => {
+                li.classList.remove('expanded');
+                li.classList.add('collapsed');
+            });
+            // Manter o root expandido
+            document.querySelector('.tree > ul > li').classList.add('expanded');
+        }
+    </script>
+</body>
+</html>
